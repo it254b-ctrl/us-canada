@@ -6,3 +6,9 @@ compatibility_flags = ["nodejs_compat"]
 [assets]
 directory = "./dist"
 binding = "ASSETS"
+
+# keep any variables/secrets set in the Cloudflare dashboard when deploying
+keep_vars = true
+
+[vars]
+TURSO_DATABASE_URL = "libsql://us-cad-it254b-ctrl.aws-us-west-2.turso.io"
