@@ -1,0 +1,45 @@
+---
+import Base from '../../layouts/Base.astro';
+import StopCard from '../../components/StopCard.astro';
+import AdBanner from '../../components/AdBanner.astro';
+import AffiliateCTA from '../../components/AffiliateCTA.astro';
+import { citySlug } from '../../lib/regions.js';
+import { query } from '../../lib/db.js';
+const [s] = await query(Astro.locals, 'SELECT * FROM stops WHERE slug = ?', [Astro.params.slug]);
+if (!s) return new Response('Not found', { status: 404 });
+const near = await query(Astro.locals, `SELECT * FROM stops WHERE id != ? AND (state_province = ? OR highway = ?) ORDER BY (highway = ?) DESC, is_featured DESC LIMIT 3`, [s.id, s.state_province, s.highway ?? '', s.highway ?? '']);
+const hasGps = s.latitude != null && s.longitude != null;
+const gps = hasGps ? `${s.latitude},${s.longitude}` : '';
+const amenities = [[s.is_free, 'Free parking'], [s.is_24_7, 'Open 24/7'], [s.has_showers, 'Showers'], [s.has_security, 'Security cameras'], [s.has_wifi, 'Wi-Fi'], [s.has_diesel, 'Diesel']];
+const jsonld = { '@context': 'https://schema.org', '@type': ['LocalBusiness', 'ParkingFacility'], name: s.name, url: Astro.url.href,
+  address: { '@type': 'PostalAddress', streetAddress: s.address || undefined, addressLocality: s.city, addressRegion: s.state_province, addressCountry: s.country },
+  ...(hasGps ? { geo: { '@type': 'GeoCoordinates', latitude: s.latitude, longitude: s.longitude } } : {}),
+  ...(s.is_24_7 ? { openingHours: 'Mo-Su 00:00-23:59' } : {}), isAccessibleForFree: !!s.is_free, publicAccess: true,
+  amenityFeature: amenities.filter(([on]) => on).map(([, n]) => ({ '@type': 'LocationFeatureSpecification', name: n, value: true })),
+  ...(s.total_spaces ? { maximumAttendeeCapacity: s.total_spaces } : {}) };
+---
+<Base title={`${s.name} - Truck Parking in ${s.city}, ${s.state_province}`} description={`${s.name}${s.highway ? ` on ${s.highway}` : ''} in ${s.city}, ${s.state_province}. ${s.total_spaces ? s.total_spaces + ' truck spaces. ' : ''}Amenities, GPS and directions.`} jsonld={jsonld}>
+  {s.is_featured ? <span class="mb-2 inline-block rounded bg-sign px-2 py-0.5 text-xs font-extrabold text-ink">Featured Lot</span> : null}
+  <h1 class="text-3xl font-extrabold">{s.name}</h1>
+  <p class="mt-1 text-lg text-mute">{s.highway}{s.exit_number ? `, exit ${s.exit_number}` : ''} · <a class="underline" href={`/city/${citySlug(s.city, s.state_province)}`}>{s.city}, {s.state_province}</a></p>
+  {s.featured_tagline ? <p class="mt-2 text-sign">{s.featured_tagline}</p> : null}
+  <dl class="mt-5 grid gap-2 rounded-lg border border-line bg-panel p-4">
+    {s.address && <div><dt class="text-sm text-mute">Address</dt><dd>{s.address}</dd></div>}
+    {hasGps && <div><dt class="text-sm text-mute">GPS</dt><dd id="gps">{gps}</dd></div>}
+    {s.total_spaces && <div><dt class="text-sm text-mute">Truck spaces</dt><dd>{s.total_spaces}</dd></div>}
+  </dl>
+  <ul class="mt-4 grid grid-cols-2 gap-2">
+    {amenities.map(([on, n]) => <li class={`rounded border px-3 py-2 ${on ? 'border-sign font-semibold' : 'border-line text-mute line-through'}`}><span aria-hidden="true">{on ? '✔' : '✘'}</span> {n}</li>)}
+  </ul>
+  {hasGps && <div class="mt-5 grid gap-3">
+    <a class="block rounded-lg bg-sign px-4 py-4 text-center text-lg font-extrabold text-ink" href={`https://www.google.com/maps/search/?api=1&query=${gps}`} target="_blank" rel="noopener">Open in Google Maps</a>
+    <button id="copy" class="rounded-lg border-2 border-sign px-4 py-3 font-bold text-sign">Copy GPS Coordinates</button>
+  </div>}
+  <AdBanner slot="top" />
+  <div class="mt-4 grid gap-3"><AffiliateCTA kind="fuelCard" /><AffiliateCTA kind="reserveParking" /><AffiliateCTA kind="insurance" banner /></div>
+  {near.length > 0 && <section class="mt-8"><h2 class="text-xl font-bold">Nearby stops</h2><div class="mt-3 grid gap-3">{near.map((n) => <StopCard stop={n} />)}</div></section>}
+  <script is:inline>
+    const b = document.getElementById('copy');
+    if (b) b.addEventListener('click', async () => { try { await navigator.clipboard.writeText(document.getElementById('gps').textContent); b.textContent = 'Copied'; } catch { b.textContent = 'Press and hold the GPS text to copy'; } setTimeout(() => (b.textContent = 'Copy GPS Coordinates'), 2000); });
+  </script>
+</Base>

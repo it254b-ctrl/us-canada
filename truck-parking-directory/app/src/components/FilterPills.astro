@@ -1,0 +1,10 @@
+---
+import { FILTERS } from '../lib/regions.js';
+const { base, active = '' } = Astro.props;
+---
+<nav class="flex gap-2 overflow-x-auto pb-2" aria-label="Amenity filters">
+  <a href={base} class={`shrink-0 rounded-full border px-4 py-2 text-sm font-semibold ${!active ? 'border-sign bg-sign text-ink' : 'border-line'}`}>All</a>
+  {Object.entries(FILTERS).map(([k, [, label]]) => (
+    <a href={`${base}?f=${k}`} class={`shrink-0 rounded-full border px-4 py-2 text-sm font-semibold ${active === k ? 'border-sign bg-sign text-ink' : 'border-line'}`}>{label}</a>
+  ))}
+</nav>

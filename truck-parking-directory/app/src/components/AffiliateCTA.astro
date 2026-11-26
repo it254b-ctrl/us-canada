@@ -1,0 +1,11 @@
+---
+import { AFFILIATE_LINKS } from '../config/monetization.js';
+const { kind, banner = false } = Astro.props;
+const link = AFFILIATE_LINKS[kind];
+---
+{link && link.url && (
+  <a href={link.url} target="_blank" rel="sponsored noopener"
+     class={banner ? 'block rounded-lg border-2 border-sign bg-panel p-4 text-center font-bold text-sign' : 'block rounded-lg bg-sign px-4 py-3 text-center font-bold text-ink'}>
+    {link.text}
+  </a>
+)}

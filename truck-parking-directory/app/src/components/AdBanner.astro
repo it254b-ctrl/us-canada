@@ -1,0 +1,13 @@
+---
+import { ADSENSE_CLIENT_ID, ADSENSE_SLOTS, SHOW_HOUSE_PLACEHOLDERS } from '../config/monetization.js';
+const { slot = 'top' } = Astro.props;
+const slotId = ADSENSE_SLOTS[slot];
+---
+{ADSENSE_CLIENT_ID && slotId ? (
+  <div class="my-4 min-h-[90px] overflow-hidden">
+    <ins class="adsbygoogle" style="display:block" data-ad-client={ADSENSE_CLIENT_ID} data-ad-slot={slotId} data-ad-format="auto" data-full-width-responsive="true"></ins>
+    <script is:inline>(window.adsbygoogle = window.adsbygoogle || []).push({});</script>
+  </div>
+) : SHOW_HOUSE_PLACEHOLDERS ? (
+  <div class="my-4 grid h-[90px] place-items-center rounded border border-dashed border-line text-sm text-mute">Ad space</div>
+) : null}

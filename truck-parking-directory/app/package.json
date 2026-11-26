@@ -1,0 +1,20 @@
+{
+  "name": "truck-parking-directory",
+  "type": "module",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "wrangler pages dev ./dist",
+    "seed": "node scripts/seed.js",
+    "import-csv": "node scripts/import-csv.js"
+  },
+  "dependencies": {
+    "@astrojs/cloudflare": "^11.2.0",
+    "@astrojs/tailwind": "^5.1.4",
+    "@libsql/client": "^0.14.0",
+    "astro": "^4.16.18",
+    "tailwindcss": "^3.4.17"
+  },
+  "devDependencies": { "wrangler": "^3.99.0" }
+}

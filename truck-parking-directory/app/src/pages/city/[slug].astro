@@ -1,0 +1,29 @@
+---
+import Base from '../../layouts/Base.astro';
+import StopCard from '../../components/StopCard.astro';
+import FilterPills from '../../components/FilterPills.astro';
+import AdBanner from '../../components/AdBanner.astro';
+import AffiliateCTA from '../../components/AffiliateCTA.astro';
+import { citySlug, FILTERS } from '../../lib/regions.js';
+import { query, ORDER } from '../../lib/db.js';
+const { slug } = Astro.params;
+const st = slug.split('-').pop().toUpperCase();
+const f = Astro.url.searchParams.get('f') || '';
+const all = (await query(Astro.locals, `SELECT * FROM stops WHERE state_province = ?${ORDER}`, [st])).filter((s) => citySlug(s.city, s.state_province) === slug);
+if (!all.length) return new Response('Not found', { status: 404 });
+const { city, state_name } = all[0];
+const key = FILTERS[f]?.[0];
+const stops = key ? all.filter((s) => s[key]) : all;
+const spaces = all.reduce((a, s) => a + (s.total_spaces || 0), 0);
+---
+<Base title={`Truck Parking in ${city}, ${st} | ${all.length} Lots, ${spaces} Spaces`} description={`Overnight truck parking in ${city}, ${state_name}: ${all.length} lots with ${spaces} total spaces.`}>
+  <h1 class="text-3xl font-extrabold">Truck parking in {city}, {st}</h1>
+  <p class="mt-1 text-mute">{all.length} {all.length === 1 ? 'lot' : 'lots'} · {spaces} spaces</p>
+  <div class="mt-4"><FilterPills base={`/city/${slug}`} active={f} /></div>
+  <AdBanner slot="top" />
+  <div class="mt-4 grid gap-3">
+    {stops.map((s, i) => <><StopCard stop={s} />{i === 4 && <AdBanner slot="in-feed" />}</>)}
+    {stops.length === 0 && <p class="text-mute">No lots match that filter here.</p>}
+  </div>
+  <div class="mt-6 grid gap-3"><AffiliateCTA kind="fuelCard" /><AffiliateCTA kind="reserveParking" /></div>
+</Base>

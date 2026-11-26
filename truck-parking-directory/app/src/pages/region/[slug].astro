@@ -1,0 +1,23 @@
+---
+import Base from '../../layouts/Base.astro';
+import StopCard from '../../components/StopCard.astro';
+import AdBanner from '../../components/AdBanner.astro';
+import { regionBySlug, citySlug } from '../../lib/regions.js';
+import { query, ORDER } from '../../lib/db.js';
+const region = regionBySlug(Astro.params.slug);
+if (!region) return new Response('Not found', { status: 404 });
+const stops = await query(Astro.locals, `SELECT * FROM stops WHERE state_province = ?${ORDER}`, [region.code]);
+const cities = [...new Set(stops.map((s) => s.city))].sort();
+const featured = stops.filter((s) => s.is_featured), rest = stops.filter((s) => !s.is_featured);
+---
+<Base title={`Truck Parking in ${region.name} | ${stops.length} Rest Stops`} description={`${stops.length} truck stops and overnight parking lots in ${region.name}. Free parking, showers, security and diesel.`}>
+  <h1 class="text-3xl font-extrabold">Truck parking in {region.name}</h1>
+  <p class="mt-1 text-mute">{stops.length} lots across {cities.length} {cities.length === 1 ? 'city' : 'cities'}</p>
+  <div class="mt-4 flex flex-wrap gap-2">{cities.map((c) => <a href={`/city/${citySlug(c, region.code)}`} class="rounded border border-line bg-panel px-3 py-1.5 hover:border-sign">{c}</a>)}</div>
+  <AdBanner slot="top" />
+  <div class="mt-4 grid gap-3">
+    {featured.map((s) => <StopCard stop={s} />)}
+    {rest.map((s, i) => <><StopCard stop={s} />{i === 4 && <AdBanner slot="in-feed" />}</>)}
+    {stops.length === 0 && <p class="text-mute">No lots listed here yet. <a class="underline" href="/list-your-lot">Add one.</a></p>}
+  </div>
+</Base>
